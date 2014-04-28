@@ -1,15 +1,15 @@
 module.exports = function (grunt) {
     grunt.initConfig({
         concat: {
-            prime_js: {
-                src: ['source/js/config.js', 'source/js/prime.js'],
-                dest: 'prime.js'
+            number_theorist_js: {
+                src: ['source/js/config.js', 'source/js/main.js'],
+                dest: 'number-theorist.js'
             }
         },
         uglify: {
             prime_min_js: {
-                src: ['prime.js'],
-                dest: 'prime.min.js'
+                src: ['number-theorist.js'],
+                dest: 'number-theorist.min.js'
             }
         },
         jshint: {
@@ -30,7 +30,7 @@ module.exports = function (grunt) {
         less: {
             prime_css: {
                 src: ['stylesheets/*.less'],
-                dest: 'prime.css'
+                dest: 'number-theorist.css'
             }
         },
         clean: {
@@ -40,7 +40,8 @@ module.exports = function (grunt) {
                     '!Gruntfile.js',
                     '!source',
                     '!node_modules',
-                    '!package.json'
+                    '!package.json',
+                    '!README.md'
                 ]
             }
         }

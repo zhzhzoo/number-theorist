@@ -1,7 +1,8 @@
 {
-    "name": "prime",
+    "name": "number-theorist",
     "description": "A tedious game.",
     "version": "0.0.0",
+    "README": "README.md",
     "devDependencies": {
         "grunt": "~0.4.0",
         "grunt-contrib-jshint": "~0.10.0",

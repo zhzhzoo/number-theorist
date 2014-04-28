@@ -1,6 +1,6 @@
 //  config.js
 //  Andy Zhang
-//  the prime game 2014
+//  the number-theorist game 2014
 
 config = {
     'fundament' : {
