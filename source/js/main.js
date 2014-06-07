@@ -2,28 +2,38 @@
 //  Andy Zhang
 //  the number-theorist game 2014
 
-// Event processor
-// events are identified simply by its name
-// objects that generate an event use **fireEvent**
-// function
-// objects that answer an event use **registerListener**
-// to provide a callback
-// ---------------
-
 (function () {
     'use strict';
+
+    var now;
+    if (typeof window.performance !== 'undefined' && window.performance.now) {
+        now = window.performance.now;
+    }
+    else {
+        now = Date.now;
+    }
+
+
+    // Event processor
+    // events are identified simply by its name
+    // objects that generate an event use **fireEvent**
+    // function
+    // objects that answer an event use **registerListener**
+    // to provide a callback
+    // ---------------
 
     function EventProcessor() {
         /*jshint validthis:true */
         var listeners = {};
+        var count = 0;
 
         // each event could be associated with a series of callerbacks
         // returns a function to remove this listener
         this.registerListener = function (eventName, callback) {
             var id = count++;
             var ename = '_' + eventName;
-            if (typeof this.listeners[ename] === 'undefined') {
-                this.listeners[ename] = {};
+            if (typeof listeners[ename] === 'undefined') {
+                listeners[ename] = {};
             }
             listeners[ename][id] = callback;
 
@@ -36,11 +46,11 @@
 
         // when fireing an event, one can optionally supply an argument
         this.fireEvent = function (eventName, arg) {
-            var id;
+            var id, ename;
             ename = '_' + eventName;
             if (typeof listeners[ename] !== 'undefined') {
                 for (id in listeners[ename]) {
-                    listeners[ename][id](eventName, arg);
+                    listeners[ename][id](arg);
                 }
             }
         };
@@ -66,37 +76,45 @@
 
         // save current state
         this.getState = function () {
-            return this.generated.length;
+            return generated.length;
         };
 
         // set current state to
         this.setState = function (stat) {
-            this.initState();
+            initState();
             generate(stat - 1);
-            this.unvisited = [];
+            unvisited = [];
         };
 
         // use a sieve method
         function generate (toGenerate) {
             var nGenerated = 0;
             function nextMod (p) {
-                return this.next % p;
+                return next % p;
             }
             while (nGenerated < toGenerate) {
-                if (this.generated.every(nextMod)) {
+                if (generated.every(nextMod)) {
                     nGenerated++;
-                    this.generated.push(this.next);
-                    this.unvisited.push(this.next);
+                    generated.push(next);
+                    unvisited.push(next);
                 }
-                this.next++;
+                next++;
             }
         }
 
         this.get = function () {
-            if (this.unvisited.length < 4) {
-                setTimer(function () {generate(10);}, 3);
+            if (unvisited.length < 4) {
+                setTimeout(function () {generate(10);}, 3);
             }
-            return this.unvisited.shift();
+            return unvisited.shift();
+        };
+
+        this.current = function () {
+            return generated[generated.length - unvisited.length];
+        };
+
+        this.count = function () {
+            return generated.length - unvisited.length;
         };
 
         this.initState();
@@ -110,15 +128,6 @@
     // -----
     function Timer () {
         /*jshint validthis:true */
-        var now;
-
-        if (typeof window.performance !== 'undefined' && window.performance.now) {
-            now = window.performance.now;
-        }
-        else {
-            now = Date.now;
-        }
-
         this.setTimeout = function (t) {
             this.timeout = t;
         };
@@ -137,6 +146,10 @@
                 timeToWait = 0;
             }
             return timeToWait;
+        };
+
+        this.getTimeout = function () {
+            return this.timeout;
         };
 
         // init state
@@ -159,42 +172,189 @@
         this.initState();
     }
 
+    // In the game there are 2 types of information to display
+    // state : info that persists on the screen
+    // prompt : info that appears then disappears
 
-    // InputHandler
-    // transform low-level input signals to meaningful events
-    // ------------
-    function InputHandler () {
-        /*jshint validthis:true */
-        // contain an event processor and expose its listener
-        var processor = new EventProcessor();
-        this.registerListener = this.processor.registerListener;
-    }
-
-
-    // DisplayHandler
-    // deal with low-level display details according to internal status change
+    // DisplayStatus
+    // manage status information
     // --------------
-    function DisplayHandler () {
+    function IOHandler () {
         /*jshint validthis:true */
-        // contain an event processor and expose its firer
-        var processor = new EventProcessor();
-        this.fireEvent = this.processor.fireEvent;
-    }
+        var i, fire, name, obj;
+        var stringOrInt;
 
+        // input
+        this.setFirer = function (x) {
+            fire = x;
+        };
+        // handle enter
+        $(document).keypress(function(e) {
+            if (e.which == 13) {
+                fire('EnterUse');
+            }
+        });
+
+        stringOrInt = ['lv', 'skp'];
+        // display status
+        function defineStringOrInt (name) {
+            Object.defineProperty(this, name, {
+                get: function () {return $('#' + name).html();},
+                set: function (x) {$('#' + name).html(x);}
+            });
+        }
+
+        function defineMeter (name) {
+            Object.defineProperty(this, name, {
+                get: function () {
+                     },
+                set: function (x) {
+                         $('#' + name + ' .tag').html(x[0] + ' / ' + x[1]);
+                         $('#' + name + ' .progress').css('width', x[0] / x[1] * 100 + '%');
+                     }
+            });
+        }
+
+        function defineCD (name) {
+            var t, timeout, start, timerID, on = false, half, i, j;
+            var arr = [
+                [' > .CDne', 'Bottom', 'Left', 'Right'],
+                [' > .CDse', 'Left', 'Top', 'Bottom'],
+                [' > .CDsw', 'Top', 'Right', 'Left'],
+                [' > .CDnw', 'Right', 'Bottom', 'Top']
+            ];
+            for (i = 0; i < 4; i++) {
+                for (j = 1; j < 4; j++) {
+                    arr[i][j] = 'border' + arr[i][j] + 'Width';
+                }
+            }
+            function init () {
+                var i;
+                $('#' + name).css('display', 'block');
+                half = $('#' + name).css('pixelWidth') / 2;
+                for (i = 0; i < 4; i++) {
+                    $('#' + name + arr[i][0]).css(arr[i][1], half);
+                    $('#' + name + arr[i][0]).css(arr[i][2], 0);
+                    $('#' + name + arr[i][0]).css(arr[i][3], half);
+                }
+                if (t === 0) {
+                    for (i = 0; i < 4; i++) {
+                        $('#' + name + arr[i][0]).css(arr[i][1], 0);
+                    }
+                }
+            }
+            function render () {
+                function pxFromPercentRad (percent, rad) {
+                    return Math.tan(percent * Math.PI / 4) * rad;
+                }
+
+                var elap = t - now() + start, phase, stage, px, ch;
+                if (elap < 0) {
+                    on = false;
+                    clearInterval(timerID);
+                    for (i = 0; i < 4; i++) {
+                        $('#' + name + arr[i][0]).css(arr[i][1], 0);
+                    }
+                    return;
+                }
+                ch = 8 - elap / timeout * 8;
+                phase = Math.floor(ch) >> 1;
+                stage = Math.floor(ch) & 1;
+                px = pxFromPercentRad(ch - Math.floor(ch), half);
+                if (stage === 0) {
+                    $('#' + name + arr[phase][0]).css(arr[phase][2], px);
+                    $('#' + name + arr[phase][0]).css(arr[phase][3], half - px + 1);
+                    if (phase !== 0) {
+                        $('#' + name + arr[phase - 1][0]).css(arr[phase - 1][1], 0);
+                    }
+                }
+                else {
+                    $('#' + name + arr[phase][0]).css(arr[phase][2], half);
+                    $('#' + name + arr[phase][0]).css(arr[phase][3], 0);
+                    $('#' + name + arr[phase][0]).css(arr[phase][1], half - px);
+                }
+            }
+            Object.defineProperty(this, name, {
+                get: function () {
+                     },
+                set: function (x) {
+                         t = x[0];
+                         timeout = x[1];
+                         if (timeout === 0) {
+                             timeout = 1;
+                         }
+                         if (t > timeout) {
+                             t = timeout;
+                         }
+                         if (!on) {
+                             init();
+                             start = now();
+                             timerID = setInterval(render, config.IO.CD.renderInterval);
+                         }
+                     }
+            });
+        }
+
+        obj = this;
+        $('div, p').each(function(){
+            // display information
+            switch ($(this).attr('data-display')) {
+                case 'int':
+                case 'string':
+                    defineStringOrInt.apply(obj, [this.id]);
+                    break;
+                case 'meter':
+                    defineMeter.apply(obj, [this.id]);
+                    break;
+                case 'CD':
+                    defineCD.apply(obj, [this.id]);
+                    break;
+            }
+
+            // trigger event
+            if ($(this).attr('data-trigger')) {
+                $(this).click(function () {
+                    fire($(this).attr('data-trigger'));
+                });
+                $(this).css('cursor', 'pointer');
+            }
+        });
+
+        this.showSkill = function (n, name) {
+            $('div#skill' + n).append($('div#skill' + name));
+        };
+
+        this.toggleUpdate = function (name, b) {
+            if (b) {
+                $('div#skill' + name + ' div.update-button').removeClass('hidden');
+            }
+            else {
+                $('div#skill' + name + ' div.update-button').addClass('hidden');
+            }
+        };
+
+        // append to event area
+        this.append = function (s) {
+            var ta = $('#eventarea');
+            ta.append(s + '\t\t');
+            ta.scrollTop(ta.prop('scrollHeight') - ta.prop('clientHeight'));
+        };
+
+        // display prompt
+        this.dPrompt = function (name, arg) {
+        };
+    }
 
     // LogicHandler
     // the game's main logic
     // --------------
-    function LogicHandler (inputHandler, displayHandler, config) {
+    function LogicHandler (dp, config) {
         /*jshint validthis:true */
-        // get event from the input handler
-        var regIn = this.iHdl.regesterListener;
-        // change display through the display handler
-        var fireDis = this.dHdl.fireEvent;
-        // contains a event processor for game logic
         var processor = new EventProcessor();
-        var regLogic = this.processor.regesterListener;
-        var fireLogic = this.processor.fireEvent;
+        var regLogic = processor.registerListener;
+        var fireLogic = processor.fireEvent;
+
+        dp.setFirer(processor.fireEvent);
 
         // prime generator
         var primeGen = new PrimeGenerator();
@@ -202,8 +362,6 @@
         var fund = new Fundament();
         // skill manager
         var skillMan = new SkillManager();
-        // prompts
-        promptDisplay();
 
         // init state
         this.initState = function () {
@@ -235,49 +393,58 @@
             // exp to next level
             var lvup;
 
+            // getters
+            this.getExp = function () {return exp;};
+            this.getLv = function () {return lv;};
+            this.getSkp = function () {return skp;};
+            this.getLvup = function () {return lvup;};
             // refresh display
             this.refresh = function () {
-                fireDis('expBar', [exp, lvup]);
-                fireDis('lvTag', lv);
-                fireDis('skpTag', skp);
+                dp.expBar = [exp, lvup];
+                dp.lv = lv;
+                dp.skp = skp;
             };
 
             // listener for gaining experience
-            regLogic('gainExp', function (e) {
+            this.gainExp = function (e) {
                 exp += e;
                 while (exp >= lvup) {
-                    fireLogic('lvUp');
+                    lvUp();
                 }
-                fireDis('expBar', [exp, lvup]);
-            });
+                dp.expBar = [exp, lvup];
+            };
 
-            // listener for level up
-            regLogic('lvUp', function () {
+            // handler for level up
+            function lvUp () {
                 exp -= lvup;
                 lv++;
                 lvup = config.fundament.lvup(lv);
-                fireDis('lvTag', lv);
+                dp.lv = lv;
                 fireLogic('lvChangeTo', lv);
-                fireLogic('gainSkp', 1);
-            });
+                gainSkp(1);
+            }
 
-            // listener for gaining skill point
-            regLogic('gainSkp', function (n) {
+            // handler for gaining skill point
+            function gainSkp (n) {
                 skp += n;
-                fireDis('skpTag', skp);
+                dp.skp = skp;
                 fireLogic('skpChangeTo', skp);
-            });
+            }
 
-            // listener for consuming skill point
-            regLogic('consumeSkp', function (n) {
+            // handler for consuming skill point
+            this.consumeSkp = function (n) {
+                if (skp < n) {
+                    throw "not enough skp.";
+                }
                 skp -= n;
-                fireDis('skpTag', skp);
+                dp.skp = skp;
                 fireLogic('skpChangeTo', skp);
-            });
+            };
 
-            // the fundamental exp gaining way
-            regLogic('newPrime', function () {
-                fireLogic('gainExp', 1);
+            // the fundamental way to gain exp
+            regLogic('newPrime', function (p) {
+                dp.append(p);
+                this.gainExp(1);
             });
 
             // init state
@@ -302,6 +469,8 @@
                 lvup = stat[3];
                 this.refresh();
             };
+
+            this.initState();
         }
 
         // skills
@@ -317,20 +486,20 @@
             var t = new Timer();
             var removals = [];
 
-            removals.push(regLogic(name + 'Use', function () {
+            removals.push(regLogic('EnterUse', function () {
                 var prime;
                 if (!t.ready()) {
                     return;
                 }
                 prime = primeGen.get();
                 t.touch();
-                fireDis(name + 'CD', [t.getWait(), t.getTimeout()]);
+                dp.EnterCD = [t.getWait(), t.getTimeout()];
                 fireLogic('newPrime', prime);
             }));
 
-            removals.push(regLogic('lvUp', function () {
-                lv++;
-                fireDis(name + 'Lv', lv);
+            removals.push(regLogic('lvChangeTo', function (v) {
+                lv = v;
+                dp.EnterLv = lv;
                 t.setTimeout(config.skill.Enter.CD(lv));
             }));
 
@@ -358,10 +527,9 @@
 
             // refresh display
             this.refresh = function () {
-                fireDis(name, 'Enter');
-                fireDis(name + 'Lv', lv);
-                fireDis(name + 'CD', [t.getWait(), t.getTimeout()]);
-                fireDis(name + 'Description', [t.getTimeout()]);
+                dp.EnterLv = lv;
+                dp.EnterCD = [t.getWait(), t.getTimeout()];
+                dp.EnterDescription = 1;
             };
 
             // remove
@@ -370,6 +538,8 @@
                     f();
                 });
             };
+
+            this.initState();
         }
 
         // the `Auto' skill
@@ -377,7 +547,7 @@
         // an auto generator which generates
         // a prime every **interval** and in
         // total **repeat** primes
-        function SkillAuto (name) {
+        function SkillAuto () {
             var lv = 0;
             var on = 0;
             var repeat = 0;
@@ -390,8 +560,10 @@
                 var prime;
                 if (remain === 0) {
                     clearInterval(timerId);
+                    on = 0;
                     return;
                 }
+                remain--;
                 prime = primeGen.get();
                 fireLogic('newPrime', prime);
             }
@@ -404,7 +576,30 @@
                 on = 1;
                 remain = repeat;
                 timerId = setInterval(tick, interval);
-                fireDis(name + 'CD', [repeat * interval, repeat * interval]);
+                if (lv !== 0) {
+                    dp.AutoCD = [repeat * interval, repeat * interval];
+                }
+            }));
+
+            // skill update event
+            removals.push(regLogic('AutoUpdate', function () {
+                try {
+                    fund.consumeSkp(1);
+                }
+                catch (err) {
+                    if (err === 'not enough skp.') {
+                        return;
+                    }
+                    throw err;
+                }
+                lv += 1;
+                dp.AutoLv = lv;
+                interval  = config.skill.Auto.interval(lv);
+                repeat = config.skill.Auto.repeat(lv);
+            }));
+
+            removals.push(regLogic('skpChangeTo', function (skp) {
+                dp.toggleUpdate('Auto', skp);
             }));
 
             this.name = 'Auto';
@@ -414,7 +609,7 @@
                 lv = 0;
                 on = 0;
                 remain = 0;
-                clearInterval(timerID);
+                clearInterval(timerId);
                 interval  = config.skill.Auto.interval(lv);
                 repeat = config.skill.Auto.repeat(lv);
                 this.refresh();
@@ -434,15 +629,17 @@
                 this.refresh();
                 if (on) {
                     setInterval(tick, remain * interval);
-                    fireDis(name + 'CD', [remain * interval, repeat * interval]);
                 }
             };
 
             // refresh display
             this.refresh = function () {
-                fireDis(name, 'Auto');
-                fireDis(name + 'Lv', lv);
-                fireDis(name + 'Discription', [repeat, interval]);
+                dp.AutoLv = lv;
+                dp.AutoDiscription = repeat.toString() + interval;
+                if (lv !== 0) {
+                    dp.AutoCD = [0, repeat * interval];
+                }
+                dp.toggleUpdate('Auto', fund.getSkp());
             };
 
             // remove
@@ -451,36 +648,82 @@
                     f();
                 });
             };
+
+            this.initState();
         }
 
-        // In the game there are 2 types of infomation to display
-        // state : info that is always on the screen
-        // prompt : info that appears then disappears
-        // state display is managed in objects that contain the state
-        // while prompt display is managed altogether here
-        function promptDisplay () {
-            var prompts = ['gainExp', 'lvUp', 'newPrime'];
-            prompts.forEach(function (name) {
-                regLogic(name, function (arg) {
-                    fireDis(name, arg);
-                });
-            });
+        // the `PrimeTheoremSkill' theorem
+        // according to the prime number theorem
+        // \pi(x) \sim x / \ln x
+        // this skill earns you extra exp
+        // if current \pi(x) and x / \ln x
+        // are closer enough
+        
+        function SkillPrimeTheorem () {
+            var removals = [], lv;
+            this.name = 'PrimeTheorem';
+
+            removals.push(regLogic('newPrime', function (x) {
+                var pi = primeGen.count(), extra;
+                extra = config.skill.PrimeTheorem.extra(lv, pi / (x / Math.log(x)));
+                fund.gainExp(extra);
+            }));
+
+            removals.push(regLogic('PrimeTheoremUpdate', function () {
+                try {
+                    fund.consumeSkp(1);
+                }
+                catch (err) {
+                    if (err === 'not enough skp.') {
+                        return;
+                    }
+                    throw err;
+                }
+                lv++;
+                dp.PrimeTheoremLv = lv;
+            }));
+
+            removals.push(regLogic('skpChangeTo', function (skp) {
+                dp.toggleUpdate('PrimeTheorem', skp);
+            }));
+
+            // init state
+            this.initState = function () {
+                lv = 0;
+            };
+
+            // save current state
+            this.getState = function () {
+                return lv;
+            };
+
+            // set current state to
+            this.setState = function (stat) {
+                lv = stat;
+            };
+
+            this.initState();
         }
 
         // skill manager
         function SkillManager () {
-            var nSkills;
-            var skills;
+            var nSkills = 0;
+            var skills = [];
 
+            setUpSkill(0, 'Enter');
+            setUpSkill(1, 'Auto');
+            setUpSkill(2, 'PrimeTheorem');
             function setUpSkill(n, skillName, stat) {
                 /*jshint evil:true */
-                // a little metaprogramming here to simplify polymorphism
+                // use eval here to avoid classification
                 var SkillConstructor = eval('Skill' + skillName);
                 if (typeof skills[n] !== 'undefined') {
                     skills[n].remove();
                 }
+                dp.showSkill(n, skillName);
                 skills[n] = new SkillConstructor();
-                skills[n].setState(stat);
+                if (typeof stat !== 'undefined')
+                    skills[n].setState(stat);
             }
 
             // init state
@@ -496,7 +739,7 @@
                 }
                 skills = new Array(nSkills);
                 for (i = 0; i < nSkills; i++) {
-                    fireDis('skill' + i + 'Clear');
+                    dp.clearSkill(i);
                 }
                 setUpSkill(0, 'Enter');
                 setUpSkill(1, 'Auto');
@@ -515,7 +758,6 @@
             // set current state to
             this.setState = function (stat) {
                 var i;
-                var skillConstructor;
                 this.initState();
                 for (i = 0; i < nSkills; i++) {
                     if (typeof stat[i] != 'undefined') {
@@ -529,4 +771,9 @@
             };
         }
     }
+
+    $(document).ready(function () {
+        var io = new IOHandler();
+        var lo = new LogicHandler(io, config);
+    });
 })();

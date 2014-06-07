@@ -28,8 +28,8 @@ module.exports = function (grunt) {
             }
         },
         less: {
-            prime_css: {
-                src: ['stylesheets/*.less'],
+            number_theorist_css: {
+                src: ['source/stylesheets/*.less'],
                 dest: 'number-theorist.css'
             }
         },

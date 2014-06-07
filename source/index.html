@@ -4,18 +4,116 @@
 		<meta charset="utf-8">
 		<meta name="author" content="andy zhang">
 		<meta name="special_thanks" content="acid liu">
-		<link rel="stylesheet" href="stylesheets/prime.css">
+		<link rel="stylesheet" href="number-theorist.css">
 	</head>
 	<body>
-		<div class="container">
-			<div class="header">
+		<div id="container">
+			<div id="header">
+				<div id="topic">
+					数论学家
+				</div>
+				<div id="nav">
+				</div>
 			</div>
-			<div class="game-operation">
+			<div id="game-container">
+				<div id="status">
+					<div id="fundament">
+						<div class="prop">
+							<div class="label">Lv.</div>
+							<div class="value" id="lv" data-display="int">1</div> 
+						</div>
+						<div class="prop">
+							<div class="label">Skp.</div>
+							<div class="value" id="skp" data-display="int">0</div>
+						</div>
+						<div id="exp">
+							<div class="label">
+								Exp.
+							</div>
+							<div class="meter" id="expBar" data-display="meter">
+								<div class="tag">0 / 1</div>
+								<div class="progress"></div>
+							</div>
+						</div>
+					</div>
+					<div id="skills">
+						<div id="skill0" class="skill">
+						</div>
+						<div id="skill1" class="skill">
+						</div>
+						<div id="skill2" class="skill">
+						</div>
+						<div id="skill3" class="skill">
+						</div>
+					</div>
+				</div>
+				<div id="events">
+					<textarea id="eventarea" readonly>
+					</textarea>
+				</div>
 			</div>
-			<div class="footer">
+			<div id="waiting">
+				<div id="skillEnter" class="skill-real">
+					<div class="icon" data-trigger="EnterUse">
+						<div id="EnterCD" class="CD" data-display="CD">
+							<div class="CDne">
+							</div>
+							<div class="CDse">
+							</div>
+							<div class="CDsw">
+							</div>
+							<div class="CDnw">
+							</div>
+						</div>
+						<img class="icon-img" src="assets/EnterIcon.png">
+					</div>
+					<div class="info">
+						<div class="name">回车</div>
+						<div class="label">Lv.</div>
+						<div class="value" id="EnterLv" data-display="int">0</div>
+					</div>
+				</div>
+				<div id="skillAuto" class="skill-real">
+					<div class="icon">
+						<div id="AutoCD" class="CD" data-display="CD">
+							<div class="CDne">
+							</div>
+							<div class="CDse">
+							</div>
+							<div class="CDsw">
+							</div>
+							<div class="CDnw">
+							</div>
+						</div>
+						<img class="icon-img" src="assets/AutoIcon.png">
+					</div>
+					<div class="info">
+						<div class="name">自动</div>
+						<div class="label">Lv.</div>
+						<div class="value" id="AutoLv" data-display="int">0</div>
+						<div class="optional">
+							<div class="update-button hidden" data-trigger="AutoUpdate" id="AutoUpdate">升级</div>
+						</div>
+					</div>
+				</div>
+				<div id="skillPrimeTheorem" class="skill-real">
+					<div class="icon">
+						<img class="icon-img" src="assets/PrimeTheoremIcon.png">
+					</div>
+					<div class="info">
+						<div class="name">素数定理</div>
+						<div class="label">Lv.</div>
+						<div class="value" id="PrimeTheoremLv" data-display="int">0</div>
+						<div class="optional">
+							<div class="update-button hidden" data-trigger="PrimeTheoremUpdate" id="PrimeTheoremUpdate">升级</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div id="footer">
 			</div>
 		</div>
-		<script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.0/jquery.min.js"></script>
+		<script src="http://libs.baidu.com/jquery/2.0.3/jquery.min.js"></script>
 		<script src="number-theorist.js"></script>
 	</body>
 </html>

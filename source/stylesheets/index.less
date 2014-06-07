@@ -1,0 +1,150 @@
+@import "import";
+
+body {
+    padding-top: 20px;
+    padding-bottom: 20px;
+    background: @bg-color;
+}
+
+#header {
+    margin-bottom: 5px;
+    padding-bottom: 5px;
+    border-bottom: thin solid hsl(0, 0, 0);
+}
+
+#nav {
+    float: right;
+}
+
+@c-width: 900px;
+@c-height: 600px;
+@c-padding: 0;
+
+#container {
+    width: @c-width;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+#game-container {
+    padding: @c-padding;
+    height: @c-height - 2 * @c-padding;
+    background: transparent;
+}
+
+@i-margin: 10px;
+@i-width: (@c-width - @i-margin) / 2 - @c-padding;
+@i-height: @c-height - @c-padding * 2;
+
+#status {
+    height: @i-height;
+    width: @i-width;
+    float: left;
+    margin-right: @i-margin;
+    background: transparent;
+}
+
+#events {
+    height: @i-height;
+    width: @i-width;
+    float: left;
+    background: @s2-color;
+}
+
+@d-margin: 10px;
+@d-height: (@i-height - @d-margin) / 2;
+
+#fundament {
+    width: @i-width;
+    height: @d-height;
+    margin-bottom: 10px;
+    background: @s2-color;
+}
+
+#skill {
+    width: @i-width;
+    height: @d-height;
+    background: @s2-color;
+}
+
+@p-margin: 10px;
+@p-width: (@i-width - @p-margin * 3) / 2;
+@p-height: (@d-height - @p-margin * 2) / 2;
+.prop {
+    width: @p-width;
+    height: @p-height;
+    float: left;
+    margin-left: @p-margin;
+    margin-top: @p-margin;
+}
+
+#exp {
+    width: @i-width - 2 * @d-margin;
+    height: @p-height;
+    margin-left: @p-margin;
+    margin-top: @p-margin;
+}
+
+#skills {
+    background: @s2-color;
+    overflow: hidden;
+    div.skill {
+        float: left;
+        margin-left: @p-margin;
+        margin-top: @p-margin;
+        width: @p-width;
+        height: @p-height;
+        background: @s3-color;
+    }
+    padding-bottom: @p-margin;
+}
+
+#waiting {
+    display: none;
+}
+
+.hidden {
+    display: none;
+}
+
+.optional {
+    position: absolute;
+}
+
+@j-width: @p-height / 2;
+div.skill-real {
+    left: 0;
+    top: 0;
+    margin: 0;
+    width: @p-width;
+    height: @p-height;
+    text-align: center;
+
+    &:before {
+        content: '';
+        display: inline-block;
+        height: 100%;
+        vertical-align: middle;
+        width: 0;
+    }
+
+    >div {
+        display: inline-block;
+        vertical-align: middle;
+    }
+    >div.icon {
+        width: @j-width;
+        height: @j-width;
+    }
+
+    div .update-button {
+        background-color: @bg-color;
+    }
+}
+
+#eventarea {
+    width: 100%;
+    height: 100%;
+    resize: none;
+    font-size: 40px;
+}

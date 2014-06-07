@@ -1,0 +1,72 @@
+@import "import";
+
+// experience meter
+.meter {
+    height: 30px;
+    background: @s2-color;
+    position: relative;
+    .tag {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        text-align: center;
+        z-index: 1;
+    }
+    .progress {
+        .transition();
+        height: 100%;
+        width: 0;
+        background: @s3-color;
+    }
+}
+
+// skill CD
+@half: 34px;
+@brdc: rgba(0, 0, 0, 0.6);
+.CD {
+    position: absolute;
+    width: 2 * @half;
+    height: 2 * @half;
+    > div {
+        height: 0;
+        width: 0;
+        margin: 0;
+        position: absolute;
+    }
+    > .CDne {
+        left: @half;
+        bottom: @half;
+
+        border-bottom: 0 solid @brdc;
+        border-left: 0 solid transparent;
+        border-right: 0 solid @brdc;
+    }
+    > .CDse {
+        top: @half;
+        left: @half;
+
+        border-left: 0 solid @brdc;
+        border-top: 0 solid transparent;
+        border-bottom: 0 solid @brdc;
+    }
+    > .CDsw {
+        top: @half;
+        left: 0;
+
+        border-top: 0 solid @brdc;
+        border-right: 0 solid transparent;
+        border-left: 0 solid @brdc;
+    }
+    > .CDnw{
+        top: 0;
+        right: @half;
+
+        border-right: 0 solid @brdc;
+        border-bottom: 0 solid transparent;
+        border-top: 0 solid @brdc;
+    }
+}
+
+
+
